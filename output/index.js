@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const bike_1 = require("./bike");
+const cliente_1 = require("./cliente");
+const reserva_1 = require("./reserva");
+let bike = new bike_1.Bike(10);
+let cliente = new cliente_1.Cliente("Hanyel");
+let reserva = new reserva_1.Reserva();
+reserva.Reservar(cliente, bike, new Date(2023, 12, 12), new Date(2023, 12, 14));
+let dias = reserva.CalcularCusto();
+console.log(typeof (dias));
+console.log(reserva.bike.valorAluguel);
