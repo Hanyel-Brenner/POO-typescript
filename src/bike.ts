@@ -1,11 +1,13 @@
-import { Reserva } from "./reserva";
-
-export class Bike{
-    valorAluguel:number;  //preco diario
-    disponivel:boolean;
-
-    constructor(valor:number){
-        this.valorAluguel = valor;
-        this.disponivel = true;
-    }
+export class Bike {
+    constructor(
+        public name: string,
+        public type: string,
+        public bodySize: number,
+        public maxLoad: number,
+        public rate: number,
+        public description: string,
+        public ratings: number,
+        public imageUrls: string[],
+        public id?: string
+    ) {}
 }
