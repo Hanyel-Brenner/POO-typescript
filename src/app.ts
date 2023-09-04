@@ -42,14 +42,31 @@ export class App {
         else throw new Error('Bike not found')
     }
     
-    rentBike(bikeId:string,Email:string,startDate:Date,endDate:Date){
+    rentBike(bikeId:string,email:string,startDate:Date,endDate:Date):void{
         //recuperar a bike
+        let bike = this.findBike(bikeId); 
         //recuperar o usuario
+        let user = this.findUser(email);
         //array somente com as reservas para a bike
+        let rentArr:Rent[]
+        for(let j:number=0; j<this.rents.length; j++){
+            if(this.rents[j].bike.id ==bikeId){
+                rentArr.push(this.rents[j])
+            }
+        }
         //tentar criar a rent com o array e as informaçoes de reserva
-        //adicioar a reserva ao array de reservas
+        let newRent = Rent.create(rentArr,bike,user,startDate,endDate);
+        //adicionar a reserva ao array de reservas
+        this.rents.push(newRent)
     }
     
+    returnBike(bikeId:string,email:string):string{
+        let bike = this.findBike(bikeId)
+        let user = this.findBike(email)
+        let k = this.rents.find(rent => (rent.bike.id == bikeId && rent.user.email == email))
+        k.dateReturned = new Date();
+        return bike.id
+    }
 }
 
 
