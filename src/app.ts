@@ -2,6 +2,7 @@ import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 
 //register bike*
 //remove bike*
@@ -24,6 +25,8 @@ export class App {
             }
         }
         user.id = crypto.randomUUID()
+        let hash:string = bcrypt.hash(user.password,13)
+        user.password = hash.toString()
         this.users.push(user)
     }
 
@@ -67,6 +70,31 @@ export class App {
         k.dateReturned = new Date();
         return bike.id
     }
-}
 
+     listUsers():void{
+        for(let i:number =0; i<this.users.length; i++){
+            if(this.users[i] != null)
+            console.log(this.users[i]);
+        }
+    }
+
+     listRents(){
+        for(let i:number =0; i<this.rents.length; i++){
+            if(this.rents[i] != null)
+            console.log(this.rents[i]);
+        }
+    }
+    listBikes(){
+        for(let i:number =0; i<this.bikes.length; i++){
+            if(this.bikes[i] != null)
+            console.log(this.bikes[i]);
+        }
+    }
+
+    userAuthentication(userId:string,password:string):boolean{
+        let user:User = this.users.find(u => u.id == userId && bcrypt.compare(password, u.password));
+        if(user!=null) return true  //user authenticated?
+        return false
+    }
+}
 
