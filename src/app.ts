@@ -1,9 +1,10 @@
 import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
+import {Crypt} from "./crypt";
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
-
+import axios from 'axios'
 //register bike*
 //remove bike*
 //rent bike
@@ -13,21 +14,26 @@ export class App {
     users: User[] = []
     bikes: Bike[] = []
     rents: Rent[] = []
+    crypt:Crypt = new Crypt()
 
     findUser(email: string): User {
         return this.users.find(user => user.email === email)
     }
 
-    registerUser(user: User): void {
+    async registerUser(user: User): Promise<string> {
         for (const rUser of this.users) {
             if (rUser.email === user.email) {
                 throw new Error('Duplicate user.')
             }
         }
         user.id = crypto.randomUUID()
-        let hash:string = bcrypt.hash(user.password,13)
-        user.password = hash.toString()
+        user.password = await this.crypt.encrypt(user.password)
         this.users.push(user)
+        return user.id
+    }
+
+    findBike(bikeId:string):Bike{
+        return this.bikes.find(bike => bike.id == bikeId)
     }
 
     registerBike(bike:Bike):string{
@@ -35,17 +41,13 @@ export class App {
        this.bikes.push(bike)
        return bike.id
     }
-
-    findBike(bikeId:string):Bike{
-        return this.bikes.find(bike => bike.id == bikeId)
-    }
     removeBike(bikeId:string): void{
         const index:number = this.bikes.indexOf(this.findBike(bikeId))
         if(index>-1) this.bikes.splice(index,1) 
         else throw new Error('Bike not found')
     }
     
-    rentBike(bikeId:string,email:string,startDate:Date,endDate:Date):void{
+    rentBike(bikeId:string,email:string,startDate:Date):void{
         //recuperar a bike
         let bike = this.findBike(bikeId); 
         //recuperar o usuario
@@ -58,17 +60,25 @@ export class App {
             }
         }
         //tentar criar a rent com o array e as informaçoes de reserva
-        let newRent = Rent.create(rentArr,bike,user,startDate,endDate);
+        let newRent = Rent.create(rentArr,bike,user,startDate);
         //adicionar a reserva ao array de reservas
-        this.rents.push(newRent)
+        
+        if(newRent != null) {
+            this.rents.push(newRent)
+            bike.available = false
+        }
+        else throw new Error('Impossible to rent this bike')
     }
     
-    returnBike(bikeId:string,email:string):string{
+    returnBike(bikeId:string, email:string):number{
         let bike = this.findBike(bikeId)
-        let user = this.findBike(email)
+        let user = this.findUser(email)
         let k = this.rents.find(rent => (rent.bike.id == bikeId && rent.user.email == email))
-        k.dateReturned = new Date();
-        return bike.id
+        k.end = new Date();
+        k.bike.available = true
+        let rentTime = k.end.getTime() - k.start.getTime()  //difference in milliseconds between each date
+        let hours = Math.abs(rentTime/(1000*60*60))
+        return hours*k.bike.rate
     }
 
      listUsers():void{
@@ -91,10 +101,11 @@ export class App {
         }
     }
 
-    userAuthentication(userId:string,password:string):boolean{
-        let user:User = this.users.find(u => u.id == userId && bcrypt.compare(password, u.password));
-        if(user!=null) return true  //user authenticated?
-        return false
-    }
+    
+    async authenticate(userEmail: string, password: string): Promise<boolean> {
+        const user = this.findUser(userEmail)
+        if (!user) throw new Error('User not found.')
+            return await this.crypt.compare(password, user.password)
+        }
+    
 }
-
