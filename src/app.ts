@@ -2,14 +2,11 @@ import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
 import {Crypt} from "./crypt";
+import {Location} from './location'
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
-import axios from 'axios'
-//register bike*
-//remove bike*
-//rent bike
-//return bike
 
+//var crypto = require('crypto')
 export class App {
     users: User[] = []
     bikes: Bike[] = []
@@ -107,5 +104,11 @@ export class App {
         if (!user) throw new Error('User not found.')
             return await this.crypt.compare(password, user.password)
         }
-    
+        
+    moveBikeTo(bikeId: string, location: Location):void {
+            const bike = this.bikes.find(bike => bike.id === bikeId)
+            bike.location.latitude = location.latitude
+            bike.location.longitude = location.longitude
+    }
 }
+
