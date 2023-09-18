@@ -2,32 +2,25 @@ import { App } from "./app";
 import { Bike } from "./bike";
 import { Rent } from "./rent";
 import { User } from "./user";
-import bcrypt from 'bcrypt'
-const bike = new Bike('mountain bike', 'mountain', 
-    123, 500, 100.5, 'desc', 5, [])
-const user = new User('Maria', 'maria@gmail.com', '1234')
-const today = new Date()
-const twoDaysFromToday = new Date()
-twoDaysFromToday.setDate(twoDaysFromToday.getDate() + 2)
-const tomorrow = new Date()
-tomorrow.setDate(tomorrow.getDate() + 1)
-const sevenDaysFromToday = new Date()
-sevenDaysFromToday.setDate(sevenDaysFromToday.getDate() + 7)
-const rent1 = Rent.create([], bike, user, today, twoDaysFromToday)
-const user2 = new User('Maria Clara', 'maria@mail.com', '3123')
+import sinon from 'sinon'
 
-const app = new App()
-app.registerUser(user)
-//let id:string = app.registerBike(bike)
-app.rentBike(app.registerBike(bike),"maria@gmail.com",today,sevenDaysFromToday)
-console.log(app.findUser('maria@gmail.com'))
-console.log(app.rents)
-app.returnBike(bike.id,user.email)
-console.log(app.rents)
-app.listUsers();
-app.listRents();
-app.listBikes();
+async function main() {
+    const clock = sinon.useFakeTimers();
+    const app = new App()
+    const user1 = new User('Jose', 'jose@mail.com', '1234')
+    await app.registerUser(user1)
+    const bike = new Bike('caloi mountainbike', 'mountain bike',
+        1234, 1234, 100.0, 'My bike', 5, [])
+    app.registerBike(bike)
+    console.log('Bike disponível: ', bike.available)
+    app.rentBike(bike.id, user1.email,new Date())
+    console.log('Bike disponível: ', bike.available)
+    clock.tick(1000 * 60 * 65)
+    console.log(app.returnBike(bike.id, user1.email))
+    console.log('Bike disponível: ', bike.available)
 
-console.log("verify user authentication:");
+    
+}
 
-console.log(app.userAuthentication(app.users[0].id, '3123'))
+main()
+
