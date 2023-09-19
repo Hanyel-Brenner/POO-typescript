@@ -105,10 +105,14 @@ export class App {
             return await this.crypt.compare(password, user.password)
         }
         
-    moveBikeTo(bikeId: string, location: Location):void {
+    moveBikeTo(bikeId: string, location: Location):boolean {
             const bike = this.bikes.find(bike => bike.id === bikeId)
+            if(bike != null){
             bike.location.latitude = location.latitude
             bike.location.longitude = location.longitude
+            return true
+            }
+            else throw new Error('the bike is not registered')
     }
 }
 
