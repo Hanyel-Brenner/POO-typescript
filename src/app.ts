@@ -5,6 +5,11 @@ import {Crypt} from "./crypt";
 import {Location} from './location'
 import crypto from 'crypto'
 import bcrypt from 'bcrypt'
+import { UserNotFoundError } from "./errors/user-not-found-error";
+import { DuplicateUserError } from "./errors/duplicate-user-error";
+import { BikeNotFoundError } from "./errors/bike-not-found-error";
+import { UnavailableBikeError } from "./errors/unavailable-bike-error";
+import { RentNotFound } from "./errors/rent-not-found";
 
 //var crypto = require('crypto')
 export class App {
@@ -14,13 +19,17 @@ export class App {
     crypt:Crypt = new Crypt()
 
     findUser(email: string): User {
-        return this.users.find(user => user.email === email)
+        let user =  this.users.find(user => user.email === email)
+        if(user == null){
+            throw new UserNotFoundError()
+        }
+        return user
     }
 
     async registerUser(user: User): Promise<string> {
         for (const rUser of this.users) {
             if (rUser.email === user.email) {
-                throw new Error('Duplicate user.')
+                throw new DuplicateUserError()
             }
         }
         user.id = crypto.randomUUID()
@@ -29,8 +38,10 @@ export class App {
         return user.id
     }
 
-    findBike(bikeId:string):Bike{
-        return this.bikes.find(bike => bike.id == bikeId)
+    findBike(bikeId: string): Bike {
+        const bike = this.bikes.find(bike => bike.id === bikeId)
+        if (!bike) throw new BikeNotFoundError()
+        return bike
     }
 
     registerBike(bike:Bike):string{
@@ -41,12 +52,14 @@ export class App {
     removeBike(bikeId:string): void{
         const index:number = this.bikes.indexOf(this.findBike(bikeId))
         if(index>-1) this.bikes.splice(index,1) 
-        else throw new Error('Bike not found')
+        else throw new BikeNotFoundError()
     }
     
     rentBike(bikeId:string,email:string,startDate:Date):void{
-        //recuperar a bike
-        let bike = this.findBike(bikeId); 
+        const bike = this.findBike(bikeId)
+        if (!bike.available) {
+            throw new UnavailableBikeError()
+        }
         //recuperar o usuario
         let user = this.findUser(email);
         //array somente com as reservas para a bike
@@ -59,18 +72,15 @@ export class App {
         //tentar criar a rent com o array e as informaçoes de reserva
         let newRent = Rent.create(rentArr,bike,user,startDate);
         //adicionar a reserva ao array de reservas
-        
-        if(newRent != null) {
-            this.rents.push(newRent)
-            bike.available = false
-        }
-        else throw new Error('Impossible to rent this bike')
+        this.rents.push(newRent)
+        bike.available = false
     }
     
     returnBike(bikeId:string, email:string):number{
         let bike = this.findBike(bikeId)
         let user = this.findUser(email)
         let k = this.rents.find(rent => (rent.bike.id == bikeId && rent.user.email == email))
+        if(k == null) throw new RentNotFound()
         k.end = new Date();
         k.bike.available = true
         let rentTime = k.end.getTime() - k.start.getTime()  //difference in milliseconds between each date
@@ -101,18 +111,13 @@ export class App {
     
     async authenticate(userEmail: string, password: string): Promise<boolean> {
         const user = this.findUser(userEmail)
-        if (!user) throw new Error('User not found.')
+        if (!user) throw new UserNotFoundError()
             return await this.crypt.compare(password, user.password)
         }
         
-    moveBikeTo(bikeId: string, location: Location):boolean {
-            const bike = this.bikes.find(bike => bike.id === bikeId)
-            if(bike != null){
+    moveBikeTo(bikeId: string, location: Location):void {
+            const bike = this.findBike(bikeId)
             bike.location.latitude = location.latitude
             bike.location.longitude = location.longitude
-            return true
-            }
-            else throw new Error('the bike is not registered')
     }
 }
-
