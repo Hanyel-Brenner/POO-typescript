@@ -10,6 +10,7 @@ import { DuplicateUserError } from "./errors/duplicate-user-error";
 import { BikeNotFoundError } from "./errors/bike-not-found-error";
 import { UnavailableBikeError } from "./errors/unavailable-bike-error";
 import { RentNotFound } from "./errors/rent-not-found";
+import { UserDoesNotExistError } from "./errors/user-does-not-exist";
 
 //var crypto = require('crypto')
 export class App {
@@ -27,11 +28,13 @@ export class App {
     }
 
     async registerUser(user: User): Promise<string> {
-        for (const rUser of this.users) {
+        for (let rUser of this.users) {
             if (rUser.email === user.email) {
                 throw new DuplicateUserError()
             }
         }
+        //let tempUser = this.users.find(u => u.email == user.email)
+        //if(tempUser != null) throw new DuplicateUserError()
         user.id = crypto.randomUUID()
         user.password = await this.crypt.encrypt(user.password)
         this.users.push(user)
@@ -49,6 +52,16 @@ export class App {
        this.bikes.push(bike)
        return bike.id
     }
+
+    removeUser(email: string): void {
+        const userIndex = this.users.findIndex(user => user.email === email)
+        if (userIndex !== -1) {
+            this.users.splice(userIndex, 1)
+            return
+        }
+        throw new UserDoesNotExistError()
+    }
+
     removeBike(bikeId:string): void{
         const index:number = this.bikes.indexOf(this.findBike(bikeId))
         if(index>-1) this.bikes.splice(index,1) 
